@@ -10,28 +10,63 @@ import warnings
 import torch
 import torch.nn as nn
 
-from mmcv import ConfigDict, deprecated_api_warning
-from mmcv.cnn import Linear, build_activation_layer, build_norm_layer
-from mmcv.runner.base_module import BaseModule, ModuleList, Sequential
+# from mmcv import ConfigDict, deprecated_api_warning
+# from mmcv.cnn import Linear, build_activation_layer, build_norm_layer
+# from mmcv.runner.base_module import BaseModule, ModuleList, Sequential
 
-from mmcv.cnn.bricks.registry import (ATTENTION, FEEDFORWARD_NETWORK, POSITIONAL_ENCODING,
-                                      TRANSFORMER_LAYER, TRANSFORMER_LAYER_SEQUENCE)
-
+# from mmcv.cnn.bricks.registry import (ATTENTION, FEEDFORWARD_NETWORK, POSITIONAL_ENCODING,
+#                                       TRANSFORMER_LAYER, TRANSFORMER_LAYER_SEQUENCE)
 # Avoid BC-breaking of importing MultiScaleDeformableAttention from this file
-try:
-    from mmcv.ops.multi_scale_deform_attn import MultiScaleDeformableAttention  # noqa F401
-    warnings.warn(
-        ImportWarning(
-            '``MultiScaleDeformableAttention`` has been moved to '
-            '``mmcv.ops.multi_scale_deform_attn``, please change original path '  # noqa E501
-            '``from mmcv.cnn.bricks.transformer import MultiScaleDeformableAttention`` '  # noqa E501
-            'to ``from mmcv.ops.multi_scale_deform_attn import MultiScaleDeformableAttention`` '  # noqa E501
-        ))
-except ImportError:
-    warnings.warn('Fail to import ``MultiScaleDeformableAttention`` from '
-                  '``mmcv.ops.multi_scale_deform_attn``, '
-                  'You should install ``mmcv-full`` if you need this module. ')
-from mmcv.cnn.bricks.transformer import build_feedforward_network, build_attention
+# try:
+#     from mmcv.ops.multi_scale_deform_attn import MultiScaleDeformableAttention  # noqa F401
+#     warnings.warn(
+#         ImportWarning(
+#             '``MultiScaleDeformableAttention`` has been moved to '
+#             '``mmcv.ops.multi_scale_deform_attn``, please change original path '  # noqa E501
+#             '``from mmcv.cnn.bricks.transformer import MultiScaleDeformableAttention`` '  # noqa E501
+#             'to ``from mmcv.ops.multi_scale_deform_attn import MultiScaleDeformableAttention`` '  # noqa E501
+#         ))
+# except ImportError:
+#     warnings.warn('Fail to import ``MultiScaleDeformableAttention`` from '
+#                   '``mmcv.ops.multi_scale_deform_attn``, '
+#                   'You should install ``mmcv-full`` if you need this module. ')
+# from mmcv.cnn.bricks.transformer import build_feedforward_network, build_attention
+
+import math
+from mmengine.config import ConfigDict  # 配置相关统一用 mmengine
+from mmcv.utils import deprecated_api_warning, TORCH_VERSION, digit_version
+from mmcv.transforms.utils import to_2tuple  # 如果你用到了 to_2tuple
+
+from mmcv.cnn import (
+    Linear,
+    build_activation_layer,
+    build_norm_layer,
+    xavier_init,
+    constant_init,
+)
+from mmcv.cnn.bricks.transformer import (
+    TransformerLayerSequence,
+    BaseTransformerLayer,
+    build_attention,
+)
+from mmcv.cnn.bricks.registry import TRANSFORMER_LAYER
+
+# BaseModule / fp16 / fp32 全部来自 mmengine
+from mmengine.model import (
+    BaseModule,
+    auto_fp16,
+    force_fp32,
+)
+
+# ModuleList / Sequential 建议直接用 torch.nn 的
+ModuleList = nn.ModuleList
+Sequential = nn.Sequential
+
+# deformable attention 直接用 mmcv 的实现，不再自己 ext_loader
+from mmcv.ops.multi_scale_deform_attn import multi_scale_deformable_attn_pytorch
+# 或者更进一步，用模块类：
+# from mmcv.ops import MultiScaleDeformableAttention
+
 
 
 @TRANSFORMER_LAYER.register_module()
