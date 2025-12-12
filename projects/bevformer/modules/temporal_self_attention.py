@@ -5,20 +5,38 @@
 # ---------------------------------------------
 
 from .multi_scale_deformable_attn_function import MultiScaleDeformableAttnFunction_fp32
-from mmcv.ops.multi_scale_deform_attn import multi_scale_deformable_attn_pytorch
 import warnings
 import torch
 import torch.nn as nn
-from mmcv.cnn import xavier_init, constant_init
-from mmcv.cnn.bricks.registry import ATTENTION
 import math
-from mmcv.runner.base_module import BaseModule, ModuleList, Sequential
-from mmcv.utils import (ConfigDict, build_from_cfg, deprecated_api_warning,
-                        to_2tuple)
 
-from mmcv.utils import ext_loader
-ext_module = ext_loader.load_ext(
-    '_ext', ['ms_deform_attn_backward', 'ms_deform_attn_forward'])
+# from mmcv.cnn import xavier_init, constant_init
+# from mmcv.cnn.bricks.registry import ATTENTION
+# from mmcv.runner.base_module import BaseModule, ModuleList, Sequential
+# from mmcv.utils import (ConfigDict, build_from_cfg, deprecated_api_warning,
+#                         to_2tuple)
+
+# from mmcv.utils import ext_loader
+# ext_module = ext_loader.load_ext(
+#     '_ext', ['ms_deform_attn_backward', 'ms_deform_attn_forward'])
+
+from mmcv.cnn import xavier_init, constant_init
+from mmcv.ops.multi_scale_deform_attn import multi_scale_deformable_attn_pytorch
+from mmcv.cnn.bricks.registry import (
+    ATTENTION,
+)
+from mmengine.model import (
+    BaseModule,
+    auto_fp16,
+    force_fp32,
+)
+# ModuleList / Sequential 建议直接用 torch.nn 的
+ModuleList = nn.ModuleList
+Sequential = nn.Sequential
+from mmcv.transforms.utils import to_2tuple  # 如果你用到了 to_2tuple
+from mmengine.config import ConfigDict  # 配置相关统一用 mmengine
+from mmcv.utils import deprecated_api_warning
+from mmengine.registry import build_from_cfg
 
 
 @ATTENTION.register_module()
