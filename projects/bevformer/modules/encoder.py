@@ -8,19 +8,39 @@
 from .custom_base_transformer_layer import MyCustomBaseTransformerLayer
 import copy
 import warnings
-from mmcv.cnn.bricks.registry import (ATTENTION,
-                                      TRANSFORMER_LAYER,
-                                      TRANSFORMER_LAYER_SEQUENCE)
-from mmcv.cnn.bricks.transformer import TransformerLayerSequence
-from mmcv.runner import force_fp32, auto_fp16
 import numpy as np
 import torch
 import cv2 as cv
 import mmcv
-from mmcv.utils import TORCH_VERSION, digit_version
-from mmcv.utils import ext_loader
-ext_module = ext_loader.load_ext(
-    '_ext', ['ms_deform_attn_backward', 'ms_deform_attn_forward'])
+
+
+# from mmcv.cnn.bricks.registry import (ATTENTION,
+#                                       TRANSFORMER_LAYER,
+#                                       TRANSFORMER_LAYER_SEQUENCE)
+# from mmcv.cnn.bricks.transformer import TransformerLayerSequence
+# from mmcv.runner import force_fp32, auto_fp16
+# from mmcv.utils import TORCH_VERSION, digit_version
+# from mmcv.utils import ext_loader
+# ext_module = ext_loader.load_ext(
+#     '_ext', ['ms_deform_attn_backward', 'ms_deform_attn_forward'])
+
+
+from mmcv.cnn.bricks.registry import (
+    TRANSFORMER_LAYER,
+    ATTENTION,
+    TRANSFORMER_LAYER_SEQUENCE,
+)
+from mmcv.cnn.bricks.transformer import (
+    TransformerLayerSequence,
+    BaseTransformerLayer,
+    build_attention,
+)
+from mmengine.model import (
+    BaseModule,
+    auto_fp16,
+    force_fp32,
+)
+from mmcv.utils import deprecated_api_warning, TORCH_VERSION, digit_version
 
 
 @TRANSFORMER_LAYER_SEQUENCE.register_module()

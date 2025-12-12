@@ -14,7 +14,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+from .multi_scale_deformable_attn_function import MultiScaleDeformableAttnFunction_fp32, \
+     MultiScaleDeformableAttnFunction_fp16
 # from mmcv.ops.multi_scale_deform_attn import multi_scale_deformable_attn_pytorch
 # from mmcv.cnn import xavier_init, constant_init
 # from mmcv.cnn.bricks.registry import (ATTENTION,
@@ -25,8 +26,6 @@ import torch.nn.functional as F
 #                         to_2tuple)
 
 # from mmcv.utils import ext_loader
-# from .multi_scale_deformable_attn_function import MultiScaleDeformableAttnFunction_fp32, \
-#     MultiScaleDeformableAttnFunction_fp16
 
 # ext_module = ext_loader.load_ext(
 #     '_ext', ['ms_deform_attn_backward', 'ms_deform_attn_forward'])
