@@ -5,26 +5,53 @@
 #  Modified by Zhiqi Li
 # ---------------------------------------------
 
-from mmcv.ops.multi_scale_deform_attn import multi_scale_deformable_attn_pytorch
+
 import warnings
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcv.cnn import xavier_init, constant_init
-from mmcv.cnn.bricks.registry import (ATTENTION,
-                                      TRANSFORMER_LAYER,
-                                      TRANSFORMER_LAYER_SEQUENCE)
-from mmcv.cnn.bricks.transformer import build_attention
-import math
-from mmcv.runner import force_fp32, auto_fp16
-
-from mmcv.runner.base_module import BaseModule, ModuleList, Sequential
-
-from mmcv.utils import ext_loader
 from .multi_scale_deformable_attn_function import MultiScaleDeformableAttnFunction_fp32, \
     MultiScaleDeformableAttnFunction_fp16
-ext_module = ext_loader.load_ext(
-    '_ext', ['ms_deform_attn_backward', 'ms_deform_attn_forward'])
+import math
+
+
+# from mmcv.ops.multi_scale_deform_attn import multi_scale_deformable_attn_pytorch
+# from mmcv.cnn import xavier_init, constant_init
+# from mmcv.cnn.bricks.registry import (ATTENTION,
+#                                       TRANSFORMER_LAYER,
+#                                       TRANSFORMER_LAYER_SEQUENCE)
+# from mmcv.cnn.bricks.transformer import build_attention
+
+# from mmcv.runner import force_fp32, auto_fp16
+
+# from mmcv.runner.base_module import BaseModule, ModuleList, Sequential
+
+# from mmcv.utils import ext_loader
+# ext_module = ext_loader.load_ext(
+#     '_ext', ['ms_deform_attn_backward', 'ms_deform_attn_forward'])
+
+# deformable attention 直接用 mmcv 的实现，不再自己 ext_loader
+from mmcv.ops.multi_scale_deform_attn import multi_scale_deformable_attn_pytorch
+from mmcv.cnn.bricks.registry import (
+    TRANSFORMER_LAYER,
+    ATTENTION,
+    TRANSFORMER_LAYER_SEQUENCE,
+)
+from mmcv.cnn.bricks.transformer import (
+    TransformerLayerSequence,
+    BaseTransformerLayer,
+    build_attention,
+)
+from mmengine.model import (
+    BaseModule,
+    auto_fp16,
+    force_fp32,
+)
+# ModuleList / Sequential 建议直接用 torch.nn 的
+ModuleList = nn.ModuleList
+Sequential = nn.Sequential
+
+
 
 
 @ATTENTION.register_module()
