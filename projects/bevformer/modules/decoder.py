@@ -4,9 +4,9 @@
 #  Modified by Zhiqi Li
 # ---------------------------------------------
 
-from mmcv.ops.multi_scale_deform_attn import multi_scale_deformable_attn_pytorch
 import mmcv
 import cv2 as cv
+import math
 import copy
 import warnings
 from matplotlib import pyplot as plt
@@ -14,21 +14,63 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcv.cnn import xavier_init, constant_init
-from mmcv.cnn.bricks.registry import (ATTENTION,
-                                      TRANSFORMER_LAYER_SEQUENCE)
-from mmcv.cnn.bricks.transformer import TransformerLayerSequence
-import math
-from mmcv.runner.base_module import BaseModule, ModuleList, Sequential
-from mmcv.utils import (ConfigDict, build_from_cfg, deprecated_api_warning,
-                        to_2tuple)
 
-from mmcv.utils import ext_loader
-from .multi_scale_deformable_attn_function import MultiScaleDeformableAttnFunction_fp32, \
-    MultiScaleDeformableAttnFunction_fp16
+# from mmcv.ops.multi_scale_deform_attn import multi_scale_deformable_attn_pytorch
+# from mmcv.cnn import xavier_init, constant_init
+# from mmcv.cnn.bricks.registry import (ATTENTION,
+#                                       TRANSFORMER_LAYER_SEQUENCE)
+# from mmcv.cnn.bricks.transformer import TransformerLayerSequence
+# from mmcv.runner.base_module import BaseModule, ModuleList, Sequential
+# from mmcv.utils import (ConfigDict, build_from_cfg, deprecated_api_warning,
+#                         to_2tuple)
 
-ext_module = ext_loader.load_ext(
-    '_ext', ['ms_deform_attn_backward', 'ms_deform_attn_forward'])
+# from mmcv.utils import ext_loader
+# from .multi_scale_deformable_attn_function import MultiScaleDeformableAttnFunction_fp32, \
+#     MultiScaleDeformableAttnFunction_fp16
+
+# ext_module = ext_loader.load_ext(
+#     '_ext', ['ms_deform_attn_backward', 'ms_deform_attn_forward'])
+
+
+from mmengine.config import ConfigDict  # 配置相关统一用 mmengine
+from mmcv.utils import deprecated_api_warning, TORCH_VERSION, digit_version
+from mmcv.transforms.utils import to_2tuple  # 如果你用到了 to_2tuple
+
+from mmcv.cnn import (
+    Linear,
+    build_activation_layer,
+    build_norm_layer,
+    xavier_init,
+    constant_init,
+)
+from mmcv.cnn.bricks.transformer import (
+    TransformerLayerSequence,
+    BaseTransformerLayer,
+    build_attention,
+)
+from mmcv.cnn.bricks.registry import (
+    TRANSFORMER_LAYER,
+    ATTENTION,
+    TRANSFORMER_LAYER_SEQUENCE,
+)
+
+# BaseModule / fp16 / fp32 全部来自 mmengine
+from mmengine.model import (
+    BaseModule,
+    auto_fp16,
+    force_fp32,
+)
+
+# ModuleList / Sequential 建议直接用 torch.nn 的
+ModuleList = nn.ModuleList
+Sequential = nn.Sequential
+
+# deformable attention 直接用 mmcv 的实现，不再自己 ext_loader
+from mmcv.ops.multi_scale_deform_attn import multi_scale_deformable_attn_pytorch
+# 或者更进一步，用模块类：
+# from mmcv.ops import MultiScaleDeformableAttention
+
+
 
 
 def inverse_sigmoid(x, eps=1e-5):
@@ -322,19 +364,9 @@ class CustomMSDeformableAttention(BaseModule):
             raise ValueError(
                 f'Last dim of reference_points must be'
                 f' 2 or 4, but get {reference_points.shape[-1]} instead.')
-        if torch.cuda.is_available() and value.is_cuda:
-
-            # using fp16 deformable attention is unstable because it performs many sum operations
-            if value.dtype == torch.float16:
-                MultiScaleDeformableAttnFunction = MultiScaleDeformableAttnFunction_fp32
-            else:
-                MultiScaleDeformableAttnFunction = MultiScaleDeformableAttnFunction_fp32
-            output = MultiScaleDeformableAttnFunction.apply(
-                value, spatial_shapes, level_start_index, sampling_locations,
-                attention_weights, self.im2col_step)
-        else:
-            output = multi_scale_deformable_attn_pytorch(
-                value, spatial_shapes, sampling_locations, attention_weights)
+        # MMCV 2.x: use official PyTorch implementation from ops
+        output = multi_scale_deformable_attn_pytorch(
+            value, spatial_shapes, sampling_locations, attention_weights)
 
         output = self.output_proj(output)
 
