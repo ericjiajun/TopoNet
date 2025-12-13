@@ -5,13 +5,16 @@
 #---------------------------------------------------------------------------------------#
 
 import numpy as np
-from mmdet.datasets.builder import PIPELINES
+# from mmdet.datasets.builder import PIPELINES
+
+from mmcv.transforms import BaseTransform
+from mmdet3d.registry import TRANSFORMS
 from shapely.geometry import LineString
 from ...core.lane.util import fix_pts_interpolate
 
 
-@PIPELINES.register_module()
-class LaneParameterize3D(object):
+@TRANSFORMS.register_module()
+class LaneParameterize3D(BaseTransform):
 
     def __init__(self, method, method_para):
         method_list = ['fix_pts_interp']
@@ -47,8 +50,8 @@ class LaneParameterize3D(object):
         return np.array(lane_list, dtype=np.float32)
 
 
-@PIPELINES.register_module()
-class LaneLengthFilter(object):
+@TRANSFORMS.register_module()
+class LaneLengthFilter(BaseTransform):
     """Filter the 3D lanes by lane length (meters).
     """
 

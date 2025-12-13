@@ -14,9 +14,14 @@ import mmcv
 import cv2
 
 from pyquaternion import Quaternion
-from mmcv.parallel import DataContainer as DC
-from mmdet.datasets import DATASETS
+
+# from mmcv.parallel import DataContainer as DC
+# from mmdet.datasets import DATASETS
+# from mmdet3d.datasets import Custom3DDataset
+
+from mmdet3d.registry import DATASETS            # ✅ 用 3D 的 registry
 from mmdet3d.datasets import Custom3DDataset
+
 from openlanev2.evaluation import evaluate as openlanev2_evaluate
 from openlanev2.utils import format_metric
 from openlanev2.visualization import draw_annotation_pv, assign_attribute, assign_topology

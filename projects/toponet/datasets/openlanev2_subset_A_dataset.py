@@ -14,9 +14,16 @@ import mmcv
 import cv2
 
 from pyquaternion import Quaternion
-from mmcv.parallel import DataContainer as DC
-from mmdet.datasets import DATASETS
+
+
+# from mmcv.parallel import DataContainer as DC
+# from mmdet.datasets import DATASETS
+# from mmdet3d.datasets import Custom3DDataset
+
+
+from mmdet3d.registry import DATASETS            # ✅ 用 3D 的 registry
 from mmdet3d.datasets import Custom3DDataset
+
 from openlanev2.evaluation import evaluate as openlanev2_evaluate
 from openlanev2.utils import format_metric
 from openlanev2.visualization import draw_annotation_pv, assign_attribute, assign_topology
@@ -205,10 +212,10 @@ class OpenLaneV2_subset_A_Dataset(Custom3DDataset):
         self.pre_pipeline(input_dict)
         example = self.pipeline(input_dict)
         if self.filter_empty_gt and \
-                (example is None or len(example['gt_lane_labels_3d']._data) == 0):
+                (example is None or len(example['gt_lane_labels_3d']) == 0):
             return None
         if self.filter_empty_te and \
-                (example is None or len(example['gt_labels']._data) == 0):
+                (example is None or len(example['gt_labels']) == 0):
             return None
 
         data_queue.insert(0, example)
@@ -221,7 +228,7 @@ class OpenLaneV2_subset_A_Dataset(Custom3DDataset):
                 self.pre_pipeline(input_dict)
                 example = self.pipeline(input_dict)
                 if self.filter_empty_gt and \
-                    (example is None or len(example['gt_lane_labels_3d']._data) == 0):
+                    (example is None or len(example['gt_lane_labels_3d']) == 0):
                     return None
                 sample_idx = input_dict['sample_idx']
             data_queue.insert(0, copy.deepcopy(example))
@@ -252,9 +259,8 @@ class OpenLaneV2_subset_A_Dataset(Custom3DDataset):
                 prev_pos = copy.deepcopy(tmp_pos)
                 prev_angle = copy.deepcopy(tmp_angle)
 
-        queue[-1]['img'] = DC(torch.stack(imgs_list),
-                              cpu_only=False, stack=True)
-        queue[-1]['img_metas'] = DC(metas_map, cpu_only=True)
+        queue[-1]['img'] = torch.stack(imgs_list,dim=0)
+        queue[-1]['img_metas'] = metas_map
         queue = queue[-1]
         return queue
 

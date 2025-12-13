@@ -5,14 +5,19 @@
 #---------------------------------------------------------------------------------------#
 
 import numpy as np
-from mmcv.parallel import DataContainer as DC
+# from mmcv.parallel import DataContainer as DC
+# from mmdet.datasets.builder import PIPELINES
+# from mmdet.datasets.pipelines import to_tensor
+# from mmdet3d.datasets.pipelines import DefaultFormatBundle3D
 
-from mmdet.datasets.builder import PIPELINES
-from mmdet.datasets.pipelines import to_tensor
+
+from mmdet3d.registry import TRANSFORMS
+from mmdet.datasets.transforms import to_tensor
 from mmdet3d.datasets.pipelines import DefaultFormatBundle3D
 
 
-@PIPELINES.register_module()
+# @PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class CustomFormatBundle3DLane(DefaultFormatBundle3D):
     """Custom formatting bundle for 3D Lane.
     """
@@ -20,7 +25,7 @@ class CustomFormatBundle3DLane(DefaultFormatBundle3D):
     def __init__(self, class_names, **kwargs):
         super(CustomFormatBundle3DLane, self).__init__(class_names, **kwargs)
 
-    def __call__(self, results):
+    def transform(self, results):
         """Call function to transform and format common fields in results.
 
         Args:
@@ -31,19 +36,14 @@ class CustomFormatBundle3DLane(DefaultFormatBundle3D):
                 default bundle.
         """
         if 'gt_lanes_3d' in results:
-            results['gt_lanes_3d'] = DC(
-                to_tensor(results['gt_lanes_3d']))
+            results['gt_lanes_3d'] = to_tensor(results['gt_lanes_3d'])
         if 'gt_lane_labels_3d' in results:
-            results['gt_lane_labels_3d'] = DC(
-                to_tensor(results['gt_lane_labels_3d']))
+            results['gt_lane_labels_3d'] = to_tensor(results['gt_lane_labels_3d'])
         if 'gt_lane_adj' in results:
-            results['gt_lane_adj'] = DC(
-                to_tensor(results['gt_lane_adj']))
+            results['gt_lane_adj'] = to_tensor(results['gt_lane_adj'])
         if 'gt_lane_lcte_adj' in results:
-            results['gt_lane_lcte_adj'] = DC(
-                to_tensor(results['gt_lane_lcte_adj']))
-
-        results = super(CustomFormatBundle3DLane, self).__call__(results)
+            results['gt_lane_lcte_adj'] = to_tensor(results['gt_lane_lcte_adj'])
+        results = super(CustomFormatBundle3DLane, self).transform(results)
         return results
 
     def __repr__(self):

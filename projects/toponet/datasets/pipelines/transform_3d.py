@@ -1,12 +1,13 @@
 import numpy as np
 from numpy import random
 import mmcv
-from mmdet.datasets.builder import PIPELINES
-from mmcv.parallel import DataContainer as DC
+# from mmdet.datasets.builder import PIPELINES
+# from mmcv.parallel import DataContainer as DC
+from mmcv.transforms import BaseTransform
+from mmdet3d.registry import TRANSFORMS
 
-
-@PIPELINES.register_module()
-class PadMultiViewImage(object):
+@TRANSFORMS.register_module()
+class PadMultiViewImage(BaseTransform):
     """Pad the multi-view image.
     There are two padding modes: (1) pad to a fixed size and (2) pad to the
     minimum size that is divisible by some number.
@@ -41,7 +42,7 @@ class PadMultiViewImage(object):
         results['pad_fixed_size'] = self.size
         results['pad_size_divisor'] = self.size_divisor
 
-    def __call__(self, results):
+    def transform(self, results):
         """Call function to pad images, masks, semantic segmentation maps.
         Args:
             results (dict): Result dict from loading pipeline.
@@ -59,8 +60,8 @@ class PadMultiViewImage(object):
         return repr_str
 
 
-@PIPELINES.register_module()
-class PadMultiViewImageSame2Max(object):
+@TRANSFORMS.register_module()
+class PadMultiViewImageSame2Max(BaseTransform):
 
     def __init__(self, size_divisor=None, pad_val=0):
         self.size_divisor = size_divisor
@@ -80,7 +81,7 @@ class PadMultiViewImageSame2Max(object):
         results['pad_fixed_size'] = None
         results['pad_size_divisor'] = self.size_divisor
 
-    def __call__(self, results):
+    def transform(self, results):
         """Call function to pad images, masks, semantic segmentation maps.
         Args:
             results (dict): Result dict from loading pipeline.
@@ -97,8 +98,8 @@ class PadMultiViewImageSame2Max(object):
         return repr_str
 
 
-@PIPELINES.register_module()
-class NormalizeMultiviewImage(object):
+@TRANSFORMS.register_module()
+class NormalizeMultiviewImage(BaseTransform):
     """Normalize the image.
     Added key is "img_norm_cfg".
     Args:
@@ -114,7 +115,7 @@ class NormalizeMultiviewImage(object):
         self.to_rgb = to_rgb
 
 
-    def __call__(self, results):
+    def transform(self, results):
         """Call function to normalize images.
         Args:
             results (dict): Result dict from loading pipeline.
@@ -134,8 +135,8 @@ class NormalizeMultiviewImage(object):
         return repr_str
 
 
-@PIPELINES.register_module()
-class PhotoMetricDistortionMultiViewImage:
+@TRANSFORMS.register_module()
+class PhotoMetricDistortionMultiViewImage(BaseTransform):
     """Apply photometric distortion to image sequentially, every transformation
     is applied with a probability of 0.5. The position of random contrast is in
     second or second to last.
@@ -164,7 +165,7 @@ class PhotoMetricDistortionMultiViewImage:
         self.saturation_lower, self.saturation_upper = saturation_range
         self.hue_delta = hue_delta
 
-    def __call__(self, results):
+    def transform(self, results):
         """Call function to perform photometric distortion on images.
         Args:
             results (dict): Result dict from loading pipeline.
@@ -234,8 +235,8 @@ class PhotoMetricDistortionMultiViewImage:
         return repr_str
 
 
-@PIPELINES.register_module()
-class CustomCollect3D(object):
+@TRANSFORMS.register_module()
+class CustomCollect3D(BaseTransform):
     """Collect data from the loader relevant to the specific task.
     This is usually the last stage of the data loader pipeline. Typically keys
     is set to some subset of "img", "proposals", "gt_bboxes",
@@ -293,7 +294,7 @@ class CustomCollect3D(object):
         self.keys = keys
         self.meta_keys = meta_keys
 
-    def __call__(self, results):
+    def transform(self, results):
         """Call function to collect keys in results. The keys in ``meta_keys``
         will be converted to :obj:`mmcv.DataContainer`.
         Args:
@@ -311,7 +312,7 @@ class CustomCollect3D(object):
             if key in results:
                 img_metas[key] = results[key]
 
-        data['img_metas'] = DC(img_metas, cpu_only=True)
+        data['img_metas'] = img_metas
         for key in self.keys:
             data[key] = results[key]
         return data
@@ -322,8 +323,8 @@ class CustomCollect3D(object):
             f'(keys={self.keys}, meta_keys={self.meta_keys})'
 
 
-@PIPELINES.register_module()
-class RandomScaleImageMultiViewImage(object):
+@TRANSFORMS.register_module()
+class RandomScaleImageMultiViewImage(BaseTransform):
     """Random scale the image
     Args:
         scales
@@ -344,7 +345,7 @@ class RandomScaleImageMultiViewImage(object):
             results['gt_bboxes'] *= scale_factor
         return results
 
-    def __call__(self, results):
+    def transform(self, results):
         """Call function to pad images, masks, semantic segmentation maps.
         Args:
             results (dict): Result dict from loading pipeline.
@@ -378,8 +379,8 @@ class RandomScaleImageMultiViewImage(object):
         return repr_str
 
 
-@PIPELINES.register_module()
-class GridMaskMultiViewImage(object):
+@TRANSFORMS.register_module()
+class GridMaskMultiViewImage(BaseTransform):
     def __init__(self, use_h=True, use_w=True, rotate=1, offset=False, ratio=0.5, mode=1, prob=0.7):
         self.use_h = use_h
         self.use_w = use_w
@@ -389,7 +390,7 @@ class GridMaskMultiViewImage(object):
         self.mode = mode
         self.prob = prob
 
-    def __call__(self, results):
+    def transform(self, results):
         if np.random.rand() > self.prob:
             return results
 
@@ -433,8 +434,8 @@ class GridMaskMultiViewImage(object):
         return results
 
 
-@PIPELINES.register_module()
-class CropFrontViewImageForAv2(object):
+@TRANSFORMS.register_module()
+class CropFrontViewImageForAv2(BaseTransform):
 
     def __init__(self, crop_h=(356, 1906)):
         self.crop_h = crop_h
@@ -460,7 +461,7 @@ class CropFrontViewImageForAv2(object):
             if 'gt_lane_lcte_adj' in results.keys():
                 results['gt_lane_lcte_adj'] = results['gt_lane_lcte_adj'][:, mask]
 
-    def __call__(self, results):
+    def transform(self, results):
         """Call function to pad images, masks, semantic segmentation maps.
         Args:
             results (dict): Result dict from loading pipeline.

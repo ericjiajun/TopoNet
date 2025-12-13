@@ -6,18 +6,20 @@
 
 import numpy as np
 import mmcv
-from mmdet.datasets.builder import PIPELINES
+# from mmdet.datasets.builder import PIPELINES
+# from mmdet3d.datasets.pipelines import LoadAnnotations3D
+from mmcv.transforms import BaseTransform
+from mmdet3d.registry import TRANSFORMS
 from mmdet3d.datasets.pipelines import LoadAnnotations3D
 
-
-@PIPELINES.register_module()
-class CustomLoadMultiViewImageFromFiles(object):
+@TRANSFORMS.register_module()
+class CustomLoadMultiViewImageFromFiles(BaseTransform):
 
     def __init__(self, to_float32=False, color_type='unchanged'):
         self.to_float32 = to_float32
         self.color_type = color_type
 
-    def __call__(self, results):
+    def transform(self, results):
         filename = results['img_filename']
         # img is of shape (h, w, c, num_views)
         img = [mmcv.imread(name, self.color_type) for name in filename]
@@ -46,7 +48,7 @@ class CustomLoadMultiViewImageFromFiles(object):
         return repr_str
 
 
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class LoadAnnotations3DLane(LoadAnnotations3D):
     """Load Annotations3D Lane.
 
@@ -85,7 +87,7 @@ class LoadAnnotations3DLane(LoadAnnotations3D):
             results['gt_lane_lcte_adj'] = results['ann_info']['gt_lane_lcte_adj']
         return results
 
-    def __call__(self, results):
+    def transform(self, results):
         """Call function to load multiple types annotations.
 
         Args:
@@ -95,7 +97,7 @@ class LoadAnnotations3DLane(LoadAnnotations3D):
             dict: The dict containing loaded 3D bounding box, label, mask and
                 semantic segmentation annotations.
         """
-        results = super().__call__(results)
+        results = super().transform(results)
         if self.with_lane_3d:
             results = self._load_lanes_3d(results)
         return results
@@ -105,6 +107,6 @@ class LoadAnnotations3DLane(LoadAnnotations3D):
         indent_str = '    '
         repr_str = super().__repr__()
         repr_str += f'{indent_str}with_lane_3d={self.with_lane_3d}, '
-        repr_str += f'{indent_str}with_lane_lable_3d={self.with_lane_lable_3d}, '
+        repr_str += f'{indent_str}with_lane_label_3d={self.with_lane_label_3d}, '
         repr_str += f'{indent_str}with_lane_adj={self.with_lane_adj}, '
         return repr_str
