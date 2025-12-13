@@ -14,8 +14,36 @@ from os import path as osp
 import mmcv
 import torch
 import torch.distributed as dist
-from mmcv import Config, DictAction
-from mmcv.runner import get_dist_info, init_dist
+
+
+# from mmcv import Config, DictAction
+# from mmcv.runner import get_dist_info, init_dist
+
+# from mmdet import __version__ as mmdet_version
+# from mmdet3d import __version__ as mmdet3d_version
+# from mmdet3d.apis import init_random_seed, train_model
+# from mmdet3d.datasets import build_dataset
+# from mmdet3d.models import build_model
+# from mmdet3d.utils import collect_env, get_root_logger
+# from mmdet.apis import set_random_seed
+# from mmseg import __version__ as mmseg_version
+
+# try:
+#     # If mmdet version > 2.20.0, setup_multi_processes would be imported and
+#     # used from mmdet instead of mmdet3d.
+#     from mmdet.utils import setup_multi_processes
+# except ImportError:
+#     from mmdet3d.utils import setup_multi_processes
+
+
+# ✅ 新版：Config / DictAction 用 mmengine
+from mmengine.config import Config, DictAction
+# ✅ 新版：分布式接口用 mmengine
+from mmengine.dist import get_dist_info, init_dist
+# ✅ 新版：工具函数 mkdir_or_exist
+from mmengine.utils import mkdir_or_exist
+# ✅ 新版：随机种子
+from mmengine.runner import set_random_seed
 
 from mmdet import __version__ as mmdet_version
 from mmdet3d import __version__ as mmdet3d_version
@@ -23,15 +51,14 @@ from mmdet3d.apis import init_random_seed, train_model
 from mmdet3d.datasets import build_dataset
 from mmdet3d.models import build_model
 from mmdet3d.utils import collect_env, get_root_logger
-from mmdet.apis import set_random_seed
 from mmseg import __version__ as mmseg_version
 
 try:
-    # If mmdet version > 2.20.0, setup_multi_processes would be imported and
-    # used from mmdet instead of mmdet3d.
+    # 新版 mmdet 会提供 setup_multi_processes
     from mmdet.utils import setup_multi_processes
 except ImportError:
     from mmdet3d.utils import setup_multi_processes
+
 
 
 def parse_args():
