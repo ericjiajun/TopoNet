@@ -9,15 +9,21 @@ import copy
 import numpy as np
 import torch
 
-from mmcv.runner import force_fp32, auto_fp16
-from mmdet.models import DETECTORS
-from mmdet.models.builder import build_head
+# from mmcv.runner import force_fp32, auto_fp16
+# from mmdet.models import DETECTORS
+# from mmdet.models.builder import build_head
+# from mmdet3d.models.detectors.mvx_two_stage import MVXTwoStageDetector
+
+from mmengine.model import force_fp32, auto_fp16  # ✅ 新版位置
+
+from mmdet.registry import MODELS as MMDET_MODELS          # 用来 build 各种 head
+from mmdet3d.registry import MODELS as MMDET3D_MODELS      # 用来注册 3D detector 本身
 from mmdet3d.models.detectors.mvx_two_stage import MVXTwoStageDetector
 
 from ...utils.builder import build_bev_constructor
 
 
-@DETECTORS.register_module()
+@MMDET3D_MODELS.register_module()
 class TopoNet(MVXTwoStageDetector):
 
     def __init__(self,
@@ -34,13 +40,13 @@ class TopoNet(MVXTwoStageDetector):
 
         if bbox_head is not None:
             bbox_head.update(train_cfg=self.train_cfg.bbox)
-            self.bbox_head = build_head(bbox_head)
+            self.bbox_head = MMDET_MODELS(bbox_head)
         else:
             self.bbox_head = None
 
         if lane_head is not None:
             lane_head.update(train_cfg=self.train_cfg.lane)
-            self.pts_bbox_head = build_head(lane_head)
+            self.pts_bbox_head = MMDET_MODELS(lane_head)
         else:
             self.pts_bbox_head = None
 
