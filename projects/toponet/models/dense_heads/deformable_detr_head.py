@@ -9,17 +9,32 @@ import copy
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+# from mmcv.cnn import Linear, bias_init_with_prob, constant_init
+# from mmcv.runner import force_fp32
+
+# from mmdet.core import (bbox_cxcywh_to_xyxy, bbox_xyxy_to_cxcywh,
+#                         multi_apply, reduce_mean)
+# from mmdet.models.utils.transformer import inverse_sigmoid
+# from mmdet.models import HEADS, build_loss
+# from mmdet.models.dense_heads import DETRHead
+
 from mmcv.cnn import Linear, bias_init_with_prob, constant_init
-from mmcv.runner import force_fp32
+from mmengine.model import force_fp32, auto_fp16
 
-from mmdet.core import (bbox_cxcywh_to_xyxy, bbox_xyxy_to_cxcywh,
-                        multi_apply, reduce_mean)
+# bbox / multi_apply / reduce_mean 位置在 mmdet3.x 变了
+from mmdet.structures.bbox import (
+    bbox_cxcywh_to_xyxy,
+    bbox_xyxy_to_cxcywh,
+)
+from mmdet.utils import multi_apply, reduce_mean
+
 from mmdet.models.utils.transformer import inverse_sigmoid
-from mmdet.models import HEADS, build_loss
-from mmdet.models.dense_heads import DETRHead
 
+from mmdet.registry import MODELS, LOSSES
+from mmdet.models.dense_heads import DETRHead  # 路径可以继续用
 
-@HEADS.register_module()
+@MODELS.register_module()
 class CustomDeformableDETRHead(DETRHead):
     """Head of DeformDETR: Deformable DETR: Deformable Transformers for End-to-
     End Object Detection.

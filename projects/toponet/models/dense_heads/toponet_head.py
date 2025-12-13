@@ -12,18 +12,45 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import mmcv
+# from mmcv.cnn import Linear, bias_init_with_prob, build_activation_layer
+# from mmcv.runner import auto_fp16, force_fp32
+# from mmcv.utils import TORCH_VERSION, digit_version
+
+# from mmdet.core import build_assigner, build_sampler, multi_apply, reduce_mean
+
+# from mmdet.models.builder import HEADS, build_loss, build_head
+
+# from mmdet.models.dense_heads import AnchorFreeHead
+
+# from mmdet.models.utils import build_transformer
+# from mmdet.models.utils.transformer import inverse_sigmoid
+
+# from mmdet3d.core.bbox.coders import build_bbox_coder
+
+
 from mmcv.cnn import Linear, bias_init_with_prob, build_activation_layer
-from mmcv.runner import auto_fp16, force_fp32
+from mmcv.cnn.bricks.transformer import build_feedforward_network  # 还能用
+
+from mmengine.model import auto_fp16, force_fp32
 from mmcv.utils import TORCH_VERSION, digit_version
-from mmdet.core import build_assigner, build_sampler, multi_apply, reduce_mean
-from mmdet.models.builder import HEADS, build_loss, build_head
+
+from mmdet.utils import multi_apply, reduce_mean
+from mmdet.registry import MODELS, TASK_UTILS, LOSSES
 from mmdet.models.dense_heads import AnchorFreeHead
-from mmdet.models.utils import build_transformer
 from mmdet.models.utils.transformer import inverse_sigmoid
-from mmdet3d.core.bbox.coders import build_bbox_coder
 
+# assigner / sampler / bbox_coder 统一走 TASK_UTILS
+# old: build_assigner, build_sampler, build_bbox_coder
+# new:
+#   assigner = TASK_UTILS.build(assigner_cfg)
+#   sampler  = TASK_UTILS.build(sampler_cfg)
+from mmdet3d.registry import TASK_UTILS as TASK_UTILS_3D  # 如果 3D bbox coder 想单独区分，可以用这个
 
-@HEADS.register_module()
+# mmdet3d 的 bbox_coder 在新版本里推荐也走 registry
+# 旧: from mmdet3d.core.bbox.coders import build_bbox_coder
+# 新: bbox_coder = TASK_UTILS_3D.build(bbox_coder_cfg)
+
+@MODELS.register_module()
 class TopoNetHead(AnchorFreeHead):
 
     def __init__(self,
@@ -73,18 +100,18 @@ class TopoNetHead(AnchorFreeHead):
                 'weight'], 'The regression L1 weight for loss and matcher ' \
                 'should be exactly the same.'
 
-            self.assigner = build_assigner(assigner)
+            self.assigner = TASK_UTILS_3D.build(assigner)
             # DETR sampling=False, so use PseudoSampler
             sampler_cfg = dict(type='PseudoSampler')
-            self.sampler = build_sampler(sampler_cfg, context=self)
+            self.sampler = TASK_UTILS.build(sampler_cfg)
         self.num_query = num_query
         self.num_classes = num_classes
         self.in_channels = in_channels
         self.train_cfg = train_cfg
         self.test_cfg = test_cfg
         self.fp16_enabled = False
-        self.loss_cls = build_loss(loss_cls)
-        self.loss_bbox = build_loss(loss_bbox)
+        self.loss_cls = LOSSES.build(loss_cls)
+        self.loss_bbox = LOSSES.build(loss_bbox)
 
         if self.loss_cls.use_sigmoid:
             self.cls_out_channels = num_classes
@@ -93,7 +120,7 @@ class TopoNetHead(AnchorFreeHead):
         self.act_cfg = transformer.get('act_cfg',
                                        dict(type='ReLU', inplace=True))
         self.activate = build_activation_layer(self.act_cfg)
-        self.transformer = build_transformer(transformer)
+        self.transformer = MODELS.build(transformer)
         self.embed_dims = self.transformer.embed_dims
 
         if lclc_head is not None:
@@ -121,7 +148,7 @@ class TopoNetHead(AnchorFreeHead):
             self.code_weights, requires_grad=False), requires_grad=False)
         self.gt_c_save = self.code_size
 
-        self.bbox_coder = build_bbox_coder(bbox_coder)
+        self.bbox_coder = TASK_UTILS_3D.build(bbox_coder)
         self.pc_range = pc_range
         self.real_w = self.pc_range[3] - self.pc_range[0]
         self.real_h = self.pc_range[4] - self.pc_range[1]
@@ -144,8 +171,8 @@ class TopoNetHead(AnchorFreeHead):
         reg_branch.append(Linear(self.embed_dims, self.code_size))
         reg_branch = nn.Sequential(*reg_branch)
 
-        lclc_branch = build_head(self.lclc_cfg)
-        lcte_branch = build_head(self.lcte_cfg)
+        lclc_branch = MODELS.build(self.lclc_cfg)
+        lcte_branch = MODELS.build(self.lcte_cfg)
 
         te_embed_branch = []
         in_channels = self.embed_dims

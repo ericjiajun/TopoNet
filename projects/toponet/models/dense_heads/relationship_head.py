@@ -10,16 +10,41 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import mmcv
+
+
+# from mmcv.cnn import Linear, bias_init_with_prob, build_activation_layer
+# from mmcv.cnn.bricks.transformer import build_feedforward_network
+# from mmcv.runner import auto_fp16, force_fp32
+# from mmcv.utils import TORCH_VERSION, digit_version
+# from mmdet.core import build_assigner, build_sampler, multi_apply, reduce_mean
+# from mmdet.models.builder import HEADS, build_loss
+# from mmdet.models.dense_heads import AnchorFreeHead
+# from mmdet.models.utils import build_transformer
+# from mmdet.models.utils.transformer import inverse_sigmoid
+# from mmdet3d.core.bbox.coders import build_bbox_coder
+
+
 from mmcv.cnn import Linear, bias_init_with_prob, build_activation_layer
-from mmcv.cnn.bricks.transformer import build_feedforward_network
-from mmcv.runner import auto_fp16, force_fp32
+from mmcv.cnn.bricks.transformer import build_feedforward_network  # 还能用
+
+from mmengine.model import auto_fp16, force_fp32
 from mmcv.utils import TORCH_VERSION, digit_version
-from mmdet.core import build_assigner, build_sampler, multi_apply, reduce_mean
-from mmdet.models.builder import HEADS, build_loss
+
+from mmdet.utils import multi_apply, reduce_mean
+from mmdet.registry import MODELS, TASK_UTILS, LOSSES
 from mmdet.models.dense_heads import AnchorFreeHead
-from mmdet.models.utils import build_transformer
 from mmdet.models.utils.transformer import inverse_sigmoid
-from mmdet3d.core.bbox.coders import build_bbox_coder
+
+# assigner / sampler / bbox_coder 统一走 TASK_UTILS
+# old: build_assigner, build_sampler, build_bbox_coder
+# new:
+#   assigner = TASK_UTILS.build(assigner_cfg)
+#   sampler  = TASK_UTILS.build(sampler_cfg)
+from mmdet3d.registry import TASK_UTILS as TASK_UTILS_3D  # 如果 3D bbox coder 想单独区分，可以用这个
+
+# mmdet3d 的 bbox_coder 在新版本里推荐也走 registry
+# 旧: from mmdet3d.core.bbox.coders import build_bbox_coder
+# 新: bbox_coder = TASK_UTILS_3D.build(bbox_coder_cfg)
 
 
 class MLP(nn.Module):
@@ -35,7 +60,7 @@ class MLP(nn.Module):
             x = F.relu(layer(x)) if i < self.num_layers - 1 else layer(x)
         return x
 
-@HEADS.register_module()
+@MODELS.register_module()
 class SingleLayerRelationshipHead(nn.Module):
     def __init__(self,
                  in_channels_o1,
@@ -55,7 +80,7 @@ class SingleLayerRelationshipHead(nn.Module):
         else:
             self.MLP_o2 = MLP(in_channels_o2, in_channels_o2, 128, 3)
         self.classifier = MLP(256, 256, 1, 3)
-        self.loss_rel = build_loss(loss_rel)
+        self.loss_rel = LOSSES.build(loss_rel)
 
     def forward(self, o1_feats, o2_feats):
         # feats: B, num_query, num_embedding
