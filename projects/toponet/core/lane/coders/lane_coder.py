@@ -1,12 +1,17 @@
 import torch
 
-from mmdet.core.bbox import BaseBBoxCoder
-from mmdet.core.bbox.builder import BBOX_CODERS
+# from mmdet.core.bbox import BaseBBoxCoder
+# from mmdet.core.bbox.builder import BBOX_CODERS
+
+from mmdet.models.task_modules.coders.base_bbox_coder import BaseBBoxCoder
+from mmdet.registry import TASK_vUTILS
+
 from ..util import denormalize_3dlane
 import numpy as np
 
 
-@BBOX_CODERS.register_module()
+# @BBOX_CODERS.register_module()
+@TASK_UTILS.register_module()
 class LanePseudoCoder(BaseBBoxCoder):
 
     def __init__(self, denormalize=False):
