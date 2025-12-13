@@ -7,11 +7,25 @@
 import numpy as np
 import torch
 import torch.nn as nn
+# from mmcv.cnn import xavier_init
+# from mmcv.cnn.bricks.transformer import build_transformer_layer_sequence
+# from mmcv.runner import auto_fp16, force_fp32
+# from mmcv.runner.base_module import BaseModule
+# from mmdet.models.utils.builder import TRANSFORMER
+
+
 from mmcv.cnn import xavier_init
 from mmcv.cnn.bricks.transformer import build_transformer_layer_sequence
-from mmcv.runner import auto_fp16, force_fp32
-from mmcv.runner.base_module import BaseModule
-from mmdet.models.utils.builder import TRANSFORMER
+
+# ✅ 新版：用 mmengine 的 BaseModule / auto_fp16 / force_fp32
+from mmengine.model import BaseModule, auto_fp16, force_fp32
+
+# ✅ 新版：统一通过 mmdet.registry.MODELS 注册 / 构建
+from mmdet.registry import MODELS
+
+from projects.bevformer.modules.decoder import CustomMSDeformableAttention
+from projects.bevformer.modules.spatial_cross_attention import MSDeformableAttention3D
+from projects.bevformer.modules.temporal_self_attention import TemporalSelfAttention
 
 from projects.bevformer.modules.decoder import CustomMSDeformableAttention
 from projects.bevformer.modules.spatial_cross_attention import \
@@ -20,7 +34,7 @@ from projects.bevformer.modules.temporal_self_attention import \
     TemporalSelfAttention
 
 
-@TRANSFORMER.register_module()
+@MODELS.register_module()
 class TopoNetTransformerDecoderOnly(BaseModule):
     """Implements the Detr3D transformer.
     Args:

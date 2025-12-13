@@ -10,10 +10,20 @@ import torch.nn as nn
 from torch.nn.init import normal_
 from torchvision.transforms.functional import rotate
 
+# from mmcv.cnn import xavier_init
+# from mmcv.cnn.bricks.transformer import build_transformer_layer_sequence, build_positional_encoding
+# from mmcv.runner.base_module import BaseModule
+# from mmcv.runner import force_fp32, auto_fp16
+
 from mmcv.cnn import xavier_init
-from mmcv.cnn.bricks.transformer import build_transformer_layer_sequence, build_positional_encoding
-from mmcv.runner.base_module import BaseModule
-from mmcv.runner import force_fp32, auto_fp16
+from mmcv.cnn.bricks.transformer import (
+    build_transformer_layer_sequence,
+    build_positional_encoding,
+)
+
+# ✅ 用 mmengine 的 BaseModule / auto_fp16 / force_fp32
+from mmengine.model import BaseModule, force_fp32, auto_fp16
+
 
 from ...utils.builder import BEV_CONSTRUCTOR
 from projects.bevformer.modules.temporal_self_attention import TemporalSelfAttention

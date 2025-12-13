@@ -12,12 +12,32 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import mmcv
+
+
+# from mmcv.cnn import Linear, build_activation_layer
+# from mmcv.cnn.bricks.drop import build_dropout 
+# from mmcv.cnn.bricks.registry import (TRANSFORMER_LAYER, FEEDFORWARD_NETWORK,
+#                                       TRANSFORMER_LAYER_SEQUENCE)
+# from mmcv.cnn.bricks.transformer import BaseTransformerLayer, TransformerLayerSequence
+# from mmcv.runner.base_module import BaseModule, ModuleList, Sequential
+
 from mmcv.cnn import Linear, build_activation_layer
-from mmcv.cnn.bricks.drop import build_dropout 
-from mmcv.cnn.bricks.registry import (TRANSFORMER_LAYER, FEEDFORWARD_NETWORK,
-                                      TRANSFORMER_LAYER_SEQUENCE)
-from mmcv.cnn.bricks.transformer import BaseTransformerLayer, TransformerLayerSequence
-from mmcv.runner.base_module import BaseModule, ModuleList, Sequential
+from mmcv.cnn.bricks.drop import build_dropout
+
+# ✅ 在 mmcv2 里，这些 registry/类都在 transformer 里
+from mmcv.cnn.bricks.transformer import (
+    BaseTransformerLayer,
+    TransformerLayerSequence,
+    TRANSFORMER_LAYER,
+    FEEDFORWARD_NETWORK,
+    TRANSFORMER_LAYER_SEQUENCE,
+)
+
+# ✅ BaseModule 用 mmengine 的
+from mmengine.model import BaseModule
+
+ModuleList = nn.ModuleList
+Sequential = nn.Sequential
 
 
 @TRANSFORMER_LAYER_SEQUENCE.register_module()
