@@ -1,10 +1,23 @@
 import torch
 
-from mmdet.core.bbox.builder import BBOX_ASSIGNERS
-from mmdet.core.bbox.assigners import AssignResult
-from mmdet.core.bbox.assigners import BaseAssigner
-from mmdet.core.bbox.match_costs import build_match_cost
-from mmdet.models.utils.transformer import inverse_sigmoid
+# from mmdet.core.bbox.builder import BBOX_ASSIGNERS
+# from mmdet.core.bbox.assigners import AssignResult
+# from mmdet.core.bbox.assigners import BaseAssigner
+# from mmdet.core.bbox.match_costs import build_match_cost
+# from mmdet.models.utils.transformer import inverse_sigmoid
+
+# 统一使用 TASK_UTILS 这个 registry
+from mmdet.registry import TASK_UTILS
+
+# assigner / coder 的基类
+from mmdet.models.task_modules.assigners.base_assigner import BaseAssigner
+from mmdet.models.task_modules.assigners.assign_result import AssignResult
+
+from mmdet.models.task_modules.coders.base_bbox_coder import BaseBBoxCoder
+
+from mmdet.models.utils.transformer import inverse_sigmoid  # 这个路径在 mmdet3.x 里还在，可以用
+
+
 from ..util import normalize_3dlane
 
 try:
@@ -13,7 +26,8 @@ except ImportError:
     linear_sum_assignment = None
 
 
-@BBOX_ASSIGNERS.register_module()
+# @BBOX_ASSIGNERS.register_module()
+@TASK_UTILS.register_module()
 class LaneHungarianAssigner3D(BaseAssigner):
 
     def __init__(self,
@@ -21,8 +35,10 @@ class LaneHungarianAssigner3D(BaseAssigner):
                  reg_cost=dict(type='BBoxL1Cost', weight=1.0),
                  normalize_gt=False,
                  pc_range=None):
-        self.cls_cost = build_match_cost(cls_cost)
-        self.reg_cost = build_match_cost(reg_cost)
+        # self.cls_cost = build_match_cost(cls_cost)
+        # self.reg_cost = build_match_cost(reg_cost)
+        self.cls_cost = TASK_UTILS.build(cls_cost)
+        self.reg_cost = TASK_UTILS.build(reg_cost)
         self.normalize_gt = normalize_gt
         self.pc_range = pc_range
 
